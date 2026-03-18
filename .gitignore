@@ -1,0 +1,13 @@
+# Rust / Tauri
+src-tauri/target/
+
+# Node
+node_modules/
+
+# Sidecar binaries (downloaded per-platform)
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

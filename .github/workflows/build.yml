@@ -33,9 +33,6 @@ jobs:
           Expand-Archive -Path uv.zip -DestinationPath uv-extracted
           Copy-Item "uv-extracted/uv.exe" "src-tauri/binaries/uv-x86_64-pc-windows-msvc.exe"
 
-      - name: Generate default icons
-        run: npx tauri icon
-
       - name: Build Tauri app
         run: npx tauri build
 

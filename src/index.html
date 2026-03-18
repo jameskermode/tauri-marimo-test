@@ -7,49 +7,108 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
       height: 100vh;
       background: #1a1a2e;
       color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
     }
-    .container { text-align: center; }
-    .spinner {
-      width: 48px; height: 48px;
-      border: 4px solid #333;
-      border-top-color: #6c63ff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 24px;
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #2a2a4a;
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    h1 { font-size: 1.4rem; margin-bottom: 8px; }
-    p { font-size: 0.9rem; color: #999; }
-    #status { margin-top: 16px; font-size: 0.85rem; color: #666; }
+    header h1 { font-size: 1.1rem; flex: 1; }
+    #open-btn {
+      padding: 8px 20px;
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: none;
+    }
+    #open-btn:hover { background: #5a52d5; }
+    #open-btn:disabled { background: #444; cursor: default; }
+    #status-badge {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #333;
+      color: #999;
+    }
+    #status-badge.ready { background: #1b3a2a; color: #4ade80; }
+    #log {
+      flex: 1;
+      padding: 12px 24px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #888;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .log-info { color: #999; }
+    .log-ready { color: #4ade80; }
+    .log-error { color: #f87171; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="spinner"></div>
-    <h1>Starting marimo…</h1>
-    <p>Installing Python packages on first launch — this may take a minute.</p>
-    <div id="status"></div>
-  </div>
+  <header>
+    <h1>marimo</h1>
+    <span id="status-badge">starting…</span>
+    <button id="open-btn">Open in Browser</button>
+  </header>
+  <div id="log"></div>
   <script>
     const MARIMO_URL = "http://127.0.0.1:2718";
-    const statusEl = document.getElementById("status");
-    let attempts = 0;
+    const logEl = document.getElementById("log");
+    const badge = document.getElementById("status-badge");
+    const openBtn = document.getElementById("open-btn");
+    let ready = false;
 
+    function log(msg, cls = "log-info") {
+      const line = document.createElement("div");
+      line.className = cls;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function openInBrowser() {
+      try {
+        await window.__TAURI__.opener.openUrl(MARIMO_URL);
+      } catch (e) {
+        log("Failed to open browser: " + e, "log-error");
+      }
+    }
+
+    openBtn.addEventListener("click", openInBrowser);
+
+    log("Launching marimo server…");
+    log("First launch installs Python + packages (may take a minute).");
+
+    let attempts = 0;
     async function poll() {
       attempts++;
-      statusEl.textContent = `Checking… (attempt ${attempts})`;
       try {
         await fetch(MARIMO_URL, { mode: "no-cors" });
-        // If fetch doesn't throw, the server is up
-        window.location.replace(MARIMO_URL);
+        if (!ready) {
+          ready = true;
+          badge.textContent = "ready";
+          badge.className = "ready";
+          openBtn.style.display = "inline-block";
+          log("marimo is ready at " + MARIMO_URL, "log-ready");
+          openInBrowser();
+        }
       } catch {
+        if (attempts % 5 === 0) {
+          log(`Waiting for server… (attempt ${attempts})`);
+        }
         setTimeout(poll, 1000);
       }
     }

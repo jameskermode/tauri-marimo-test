@@ -10,13 +10,19 @@ struct SidecarChild(Mutex<Option<CommandChild>>);
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(SidecarChild(Mutex::new(None)))
         .setup(|app| {
+            let resource_dir = app.path().resource_dir()
+                .expect("failed to resolve resource dir");
+            let notebook = resource_dir.join("notebooks").join("test.py");
+
             let cmd = app.shell().sidecar("uv").map_err(|e| {
                 eprintln!("Failed to create sidecar command: {e}");
                 e
             })?;
 
+            let notebook_str = notebook.to_string_lossy().to_string();
             let cmd = cmd.args([
                 "run",
                 "--with", "marimo",
@@ -27,6 +33,7 @@ fn main() {
                 "--host", "127.0.0.1",
                 "--port", "2718",
                 "--no-token",
+                &notebook_str,
             ]);
 
             let (_rx, child) = cmd.spawn().map_err(|e| {

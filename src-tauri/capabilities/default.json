@@ -8,7 +8,7 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "binaries/uv",
+          "name": "uv",
           "sidecar": true,
           "args": true
         }

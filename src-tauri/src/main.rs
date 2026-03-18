@@ -12,7 +12,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .manage(SidecarChild(Mutex::new(None)))
         .setup(|app| {
-            let cmd = app.shell().sidecar("binaries/uv").map_err(|e| {
+            let cmd = app.shell().sidecar("uv").map_err(|e| {
                 eprintln!("Failed to create sidecar command: {e}");
                 e
             })?;

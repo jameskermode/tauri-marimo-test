@@ -53,7 +53,7 @@ jobs:
           $url = "https://github.com/astral-sh/uv/releases/download/$uvVersion/uv-${{ matrix.uv-target }}.zip"
           Invoke-WebRequest -Uri $url -OutFile uv.zip
           Expand-Archive -Path uv.zip -DestinationPath uv-extracted
-          Copy-Item "uv-extracted/uv.exe" "src-tauri/binaries/uv-${{ matrix.uv-target }}.exe"
+          Copy-Item "uv-extracted/uv.exe" "src-tauri/uv-${{ matrix.uv-target }}.exe"
 
       - name: Download uv binary (macOS/Linux)
         if: runner.os != 'Windows'
@@ -61,7 +61,7 @@ jobs:
           UV_VERSION="0.6.11"
           curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${{ matrix.uv-target }}.tar.gz" -o uv.tar.gz
           tar xzf uv.tar.gz
-          cp "uv-${{ matrix.uv-target }}/uv" "src-tauri/binaries/uv-${{ matrix.uv-target }}"
+          cp "uv-${{ matrix.uv-target }}/uv" "src-tauri/uv-${{ matrix.uv-target }}"
 
       - name: Build Tauri app
         run: npx tauri build

@@ -24,8 +24,8 @@ To build manually:
 
 ```bash
 npm install
-# Download the uv binary for your platform into src-tauri/binaries/
-# e.g. uv-x86_64-pc-windows-msvc.exe, uv-aarch64-apple-darwin, uv-x86_64-unknown-linux-gnu
+# Download the uv binary for your platform into src-tauri/
+# e.g. src-tauri/uv-x86_64-pc-windows-msvc.exe, src-tauri/uv-aarch64-apple-darwin
 npx tauri build
 ```
 

@@ -5,8 +5,7 @@ src-tauri/target/
 node_modules/
 
 # Sidecar binaries (downloaded per-platform)
-src-tauri/binaries/*
-!src-tauri/binaries/.gitkeep
+src-tauri/uv-*
 
 # OS
 .DS_Store

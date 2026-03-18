@@ -10,12 +10,12 @@ The preferred architecture (Option 3 in the design doc) bundles **uv** (~30MB st
 
 ## Status
 
-**Scaffolded.** The Tauri v2 project structure is in place. To build/run, download the platform-appropriate `uv` binary into `src-tauri/binaries/` and run `npx tauri dev`.
+**Scaffolded.** The Tauri v2 project structure is in place. To build/run, download the platform-appropriate `uv` binary into `src-tauri/` and run `npx tauri dev`.
 
 ## Architecture (uv bootstrap approach)
 
 - **Tauri v2** app with NSIS installer (`currentUser` install mode — no admin)
-- **Sidecar:** `uv` binary at `src-tauri/binaries/uv-{target-triple}.exe`
+- **Sidecar:** `uv` binary at `src-tauri/uv-{target-triple}[.exe]`
 - **Rust backend** (`src-tauri/src/main.rs`): spawns `uv run --with marimo ... marimo edit --headless --port 2718`
 - **Frontend** (`src/index.html`): loading page that polls localhost:2718 until marimo is ready, then redirects
 - **Notebooks** bundled as resources in `notebooks/`
@@ -30,7 +30,7 @@ npm run tauri dev            # dev mode (hot reload frontend + Rust rebuild)
 npm run tauri build          # production build (creates NSIS installer on Windows)
 ```
 
-The uv sidecar binary must be downloaded and placed at `src-tauri/binaries/uv-x86_64-pc-windows-msvc.exe` before building. Cross-compilation to Windows is not supported — use the GitHub Actions workflow (`.github/workflows/build.yml`) on a `windows-latest` runner.
+The uv sidecar binary must be downloaded and placed at `src-tauri/uv-{target-triple}[.exe]` before building (e.g. `src-tauri/uv-aarch64-apple-darwin` on macOS). CI handles this automatically for all platforms.
 
 ## Key Constraints
 

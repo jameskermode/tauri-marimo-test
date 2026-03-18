@@ -1,6 +1,6 @@
 # tauri-marimo-test
 
-Proof-of-concept [Tauri v2](https://tauri.app/) desktop app that bundles [marimo](https://marimo.io/) (Python notebook editor) for distribution to students on managed university Windows machines — no admin rights required.
+Proof-of-concept [Tauri v2](https://tauri.app/) desktop app that bundles [marimo](https://marimo.io/) (Python notebook editor) for distribution to students on managed university machines — no admin rights required on Windows.
 
 ## How it works
 
@@ -12,19 +12,33 @@ First launch requires internet (uv downloads Python + packages). Subsequent laun
 
 ## Building
 
-CI builds the Windows NSIS installer automatically on push to `main`. Download the `.exe` from the [latest workflow run](../../actions/workflows/build.yml).
+CI builds installers for all three platforms automatically on push to `main`. Download artifacts from the [latest workflow run](../../actions/workflows/build.yml):
 
-To build manually on a Windows machine:
+| Platform | Artifact | Format |
+|----------|----------|--------|
+| Windows | `windows-installer` | NSIS `.exe` |
+| macOS | `macos-installer` | `.dmg` |
+| Linux | `linux-installer` | `.AppImage` |
+
+To build manually:
 
 ```bash
 npm install
-# Download uv into src-tauri/binaries/uv-x86_64-pc-windows-msvc.exe
+# Download the uv binary for your platform into src-tauri/binaries/
+# e.g. uv-x86_64-pc-windows-msvc.exe, uv-aarch64-apple-darwin, uv-x86_64-unknown-linux-gnu
 npx tauri build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis/`.
+On Linux, you also need system libraries at build time:
+
+```bash
+sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+```
 
 ## Requirements
 
-- **End users:** Windows 10/11 with WebView2 (pre-installed) and internet on first launch
-- **Building:** Rust toolchain, Node.js 20+, Windows (no cross-compilation)
+- **End users:** Internet on first launch (uv downloads Python + packages)
+  - **Windows:** Windows 10/11 with WebView2 (pre-installed)
+  - **macOS:** macOS 12+ (Apple Silicon). Unsigned — right-click → Open on first launch to bypass Gatekeeper.
+  - **Linux:** `chmod +x` the AppImage and run it
+- **Building:** Rust toolchain, Node.js 20+

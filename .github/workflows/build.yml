@@ -1,4 +1,4 @@
-name: Build Windows Installer
+name: Build Installers
 
 on:
   push:
@@ -9,7 +9,22 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            uv-target: x86_64-pc-windows-msvc
+            artifact: windows-installer
+          - os: macos-latest
+            uv-target: aarch64-apple-darwin
+            artifact: macos-installer
+          - os: ubuntu-latest
+            uv-target: x86_64-unknown-linux-gnu
+            artifact: linux-installer
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,23 +36,53 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Download uv binary
+      - name: Download uv binary (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $uvVersion = "0.6.11"
-          $url = "https://github.com/astral-sh/uv/releases/download/$uvVersion/uv-x86_64-pc-windows-msvc.zip"
+          $url = "https://github.com/astral-sh/uv/releases/download/$uvVersion/uv-${{ matrix.uv-target }}.zip"
           Invoke-WebRequest -Uri $url -OutFile uv.zip
           Expand-Archive -Path uv.zip -DestinationPath uv-extracted
-          Copy-Item "uv-extracted/uv.exe" "src-tauri/binaries/uv-x86_64-pc-windows-msvc.exe"
+          Copy-Item "uv-extracted/uv.exe" "src-tauri/binaries/uv-${{ matrix.uv-target }}.exe"
+
+      - name: Download uv binary (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: |
+          UV_VERSION="0.6.11"
+          curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${{ matrix.uv-target }}.tar.gz" -o uv.tar.gz
+          tar xzf uv.tar.gz
+          cp "uv-${{ matrix.uv-target }}/uv" "src-tauri/binaries/uv-${{ matrix.uv-target }}"
 
       - name: Build Tauri app
         run: npx tauri build
 
-      - name: Upload installer artifact
+      - name: Upload installer artifact (Windows)
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
+          name: ${{ matrix.artifact }}
           path: src-tauri/target/release/bundle/nsis/*.exe
+
+      - name: Upload installer artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+
+      - name: Upload installer artifact (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: src-tauri/target/release/bundle/appimage/*.AppImage

@@ -29,7 +29,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["notebooks/*"],
+    "resources": ["../notebooks/*"],
     "externalBin": ["binaries/uv"],
     "windows": {
       "nsis": {

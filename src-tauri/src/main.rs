@@ -7,6 +7,54 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 
 struct SidecarChild(Mutex<Option<CommandChild>>);
 
+/// Launch the mograder student dashboard.
+/// `course_dir_or_url` is either a local directory path (returning user)
+/// or a URL to a mograder.toml (first-time setup).
+#[tauri::command]
+fn launch_dashboard(
+    app: tauri::AppHandle,
+    course_dir_or_url: String,
+) -> Result<(), String> {
+    let cmd = app.shell().sidecar("uv").map_err(|e| e.to_string())?;
+    let cmd = cmd.args([
+        "run",
+        "--with", "mograder",
+        "mograder", "student",
+        &course_dir_or_url,
+        "--headless",
+        "--no-token",
+        "--port", "2718",
+    ]);
+
+    let (mut rx, child) = cmd.spawn().map_err(|e| e.to_string())?;
+
+    // Store child for cleanup on exit
+    *app.state::<SidecarChild>().0.lock().unwrap() = Some(child);
+
+    // Forward sidecar stdout/stderr to frontend via Tauri events
+    let app_handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                CommandEvent::Stdout(line) => {
+                    let text = String::from_utf8_lossy(&line);
+                    let _ = app_handle.emit("sidecar-output", text.as_ref());
+                }
+                CommandEvent::Stderr(line) => {
+                    let text = String::from_utf8_lossy(&line);
+                    let _ = app_handle.emit("sidecar-output", text.as_ref());
+                }
+                CommandEvent::Error(err) => {
+                    let _ = app_handle.emit("sidecar-error", &err);
+                }
+                _ => {}
+            }
+        }
+    });
+
+    Ok(())
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -58,67 +106,26 @@ fn main() {
                 .build(),
         )
         .manage(SidecarChild(Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![launch_dashboard])
         .setup(|app| {
             // Resolve course directory in app data (writable by user)
             let app_data_dir = app.path().app_data_dir()
                 .expect("failed to resolve app data dir");
             let course_dir = app_data_dir.join("course");
+            std::fs::create_dir_all(&course_dir)
+                .expect("failed to create course directory");
 
-            // First-launch: copy bundled mograder.toml to app data
-            if !course_dir.join("mograder.toml").exists() {
-                let resource_dir = app.path().resource_dir()
-                    .expect("failed to resolve resource dir");
-                let bundled_config = resource_dir.join("course").join("mograder.toml");
-
-                std::fs::create_dir_all(&course_dir)
-                    .expect("failed to create course directory");
-                std::fs::copy(&bundled_config, course_dir.join("mograder.toml"))
-                    .expect("failed to copy mograder.toml to app data");
-            }
-
-            // Spawn mograder student dashboard via uv sidecar
-            let cmd = app.shell().sidecar("uv").map_err(|e| {
-                eprintln!("Failed to create sidecar command: {e}");
-                e
-            })?;
-
+            // Tell the frontend the course dir and whether setup is needed
+            let has_config = course_dir.join("mograder.toml").exists();
+            let window = app.get_webview_window("main").unwrap();
             let course_dir_str = course_dir.to_string_lossy().to_string();
-            let cmd = cmd.args([
-                "run",
-                "--with", "mograder",
-                "mograder", "student",
-                &course_dir_str,
-                "--headless",
-                "--no-token",
-                "--port", "2718",
-            ]);
-
-            let (mut rx, child) = cmd.spawn().map_err(|e| {
-                eprintln!("Failed to spawn uv sidecar: {e}");
-                e
-            })?;
-
-            *app.state::<SidecarChild>().0.lock().unwrap() = Some(child);
-
-            // Forward sidecar stdout/stderr to frontend via Tauri events
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                while let Some(event) = rx.recv().await {
-                    match event {
-                        CommandEvent::Stdout(line) => {
-                            let text = String::from_utf8_lossy(&line);
-                            let _ = app_handle.emit("sidecar-output", text.as_ref());
-                        }
-                        CommandEvent::Stderr(line) => {
-                            let text = String::from_utf8_lossy(&line);
-                            let _ = app_handle.emit("sidecar-output", text.as_ref());
-                        }
-                        CommandEvent::Error(err) => {
-                            let _ = app_handle.emit("sidecar-error", &err);
-                        }
-                        _ => {}
-                    }
-                }
+            // Emit after a short delay to ensure frontend listeners are ready
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                let _ = window.emit("app-init", serde_json::json!({
+                    "courseDir": course_dir_str,
+                    "hasConfig": has_config,
+                }));
             });
 
             Ok(())

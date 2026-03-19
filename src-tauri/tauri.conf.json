@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/tauri/refs/heads/main/crates/tauri-cli/schema.json",
-  "productName": "tauri-marimo-test",
+  "productName": "mograder-tauri",
   "version": "0.1.0",
-  "identifier": "com.tauri-marimo-test.app",
+  "identifier": "com.mograder-tauri.app",
   "build": {
     "frontendDist": "../src"
   },
@@ -30,9 +30,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": {
-      "../course/*": "course/"
-    },
+    "resources": {},
     "externalBin": ["uv"],
     "windows": {
       "nsis": {

@@ -63,6 +63,27 @@ jobs:
           tar xzf uv.tar.gz
           cp "uv-${{ matrix.uv-target }}/uv" "src-tauri/uv-${{ matrix.uv-target }}"
 
+      # --- Windows code signing (disabled until certificate is obtained) ---
+      # To enable:
+      #   1. Obtain a code signing certificate (.pfx)
+      #   2. Add GitHub secrets: WINDOWS_CERTIFICATE (base64-encoded .pfx),
+      #      WINDOWS_CERTIFICATE_PASSWORD
+      #   3. Set certificateThumbprint in src-tauri/tauri.conf.json
+      #   4. Uncomment the step below
+      #
+      # - name: Import code signing certificate
+      #   if: runner.os == 'Windows'
+      #   shell: pwsh
+      #   run: |
+      #     $certBytes = [System.Convert]::FromBase64String('${{ secrets.WINDOWS_CERTIFICATE }}')
+      #     New-Item -ItemType Directory -Force -Path certificate
+      #     [System.IO.File]::WriteAllBytes('certificate\certificate.pfx', $certBytes)
+      #     Import-PfxCertificate `
+      #       -FilePath certificate\certificate.pfx `
+      #       -CertStoreLocation Cert:\CurrentUser\My `
+      #       -Password (ConvertTo-SecureString -String '${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}' -Force -AsPlainText)
+      #     Remove-Item certificate\certificate.pfx
+
       - name: Build Tauri app
         run: npx tauri build
 

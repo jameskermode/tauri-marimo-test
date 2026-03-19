@@ -1,14 +1,15 @@
-# tauri-marimo-test
+# mograder-tauri
 
-Proof-of-concept [Tauri v2](https://tauri.app/) desktop app that bundles [marimo](https://marimo.io/) (Python notebook editor) for distribution to students on managed university machines — no admin rights required on Windows.
+[Tauri v2](https://tauri.app/) desktop app that wraps the [mograder](https://github.com/jameskermode/mograder) student dashboard for distribution to students on managed university machines — no admin rights required on Windows.
 
 ## How it works
 
 1. The app ships with [uv](https://github.com/astral-sh/uv) (~30 MB) as a Tauri sidecar
-2. On launch, uv creates a Python environment and runs `marimo edit --headless` with numpy and matplotlib
-3. A loading page polls `http://127.0.0.1:2718` until marimo is ready, then redirects the WebView
+2. On first launch, a setup screen asks for a course configuration URL (provided by the instructor)
+3. uv creates a Python environment and runs `mograder student` which serves the dashboard at `http://127.0.0.1:2718`
+4. The WebView displays the dashboard; external links (Moodle login, marimo edit sessions) open in the system browser
 
-First launch requires internet (uv downloads Python + packages). Subsequent launches are fast thanks to uv's cache.
+Subsequent launches skip setup and go straight to the dashboard. First launch requires internet (uv downloads Python + packages).
 
 ## Building
 
@@ -38,7 +39,17 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicat
 ## Requirements
 
 - **End users:** Internet on first launch (uv downloads Python + packages)
-  - **Windows:** Windows 10/11 with WebView2 (pre-installed)
+  - **Windows:** Windows 10/11 with WebView2 (pre-installed). Unsigned — click "Run Anyway" on SmartScreen prompt.
   - **macOS:** macOS 12+ (Apple Silicon). Unsigned — right-click → Open on first launch to bypass Gatekeeper.
   - **Linux:** `chmod +x` the AppImage and run it
 - **Building:** Rust toolchain, Node.js 20+
+
+## Testing
+
+On first launch, the app shows a setup screen asking for a course configuration URL. For testing, use the mograder demo course (HTTPS transport, no authentication required):
+
+```
+https://raw.githubusercontent.com/jameskermode/mograder/main/demo/codespaces/mograder.toml
+```
+
+Paste this URL into the setup screen and click "Connect".

@@ -30,6 +30,55 @@
       color: #999;
     }
     #status-badge.ready { background: #1b3a2a; color: #4ade80; }
+
+    /* Setup screen */
+    #setup {
+      display: none;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    #setup .card {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    #setup h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+    #setup p {
+      color: #999;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    #setup input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #2a2a4a;
+      border: 1px solid #3a3a5a;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    #setup input:focus { outline: none; border-color: #6c63ff; }
+    #setup button {
+      padding: 10px 28px;
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    #setup button:hover { background: #5a52d5; }
+    #setup button:disabled { background: #444; cursor: default; }
+    #setup .error { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
+
+    /* Log panel */
     #log {
       flex: 1;
       padding: 12px 24px;
@@ -48,14 +97,32 @@
 <body>
   <header>
     <h1>mograder</h1>
-    <span id="status-badge">starting...</span>
+    <span id="status-badge">initializing...</span>
   </header>
+
+  <!-- First-launch setup screen -->
+  <div id="setup">
+    <div class="card">
+      <h2>Course Setup</h2>
+      <p>Paste the course configuration URL provided by your instructor.</p>
+      <input id="course-url" type="url" placeholder="https://example.com/path/to/mograder.toml" />
+      <button id="setup-btn" onclick="submitSetup()">Connect</button>
+      <div id="setup-error" class="error"></div>
+    </div>
+  </div>
+
+  <!-- Loading / log panel -->
   <div id="log"></div>
+
   <script>
     const MARIMO_URL = "http://127.0.0.1:2718";
+    const { invoke } = window.__TAURI__.core;
+    const { listen } = window.__TAURI__.event;
     const logEl = document.getElementById("log");
     const badge = document.getElementById("status-badge");
+    const setupEl = document.getElementById("setup");
     let ready = false;
+    let courseDir = null;
 
     function log(msg, cls = "log-info") {
       const line = document.createElement("div");
@@ -65,39 +132,93 @@
       logEl.scrollTop = logEl.scrollHeight;
     }
 
-    // Listen for sidecar output forwarded from Rust backend
-    const { listen } = window.__TAURI__.event;
-    listen("sidecar-output", (event) => {
-      log(event.payload, "log-info");
-    });
-    listen("sidecar-error", (event) => {
-      log(event.payload, "log-error");
+    // Listen for sidecar output
+    listen("sidecar-output", (event) => { log(event.payload, "log-info"); });
+    listen("sidecar-error", (event) => { log(event.payload, "log-error"); });
+
+    // Listen for init event from Rust
+    listen("app-init", (event) => {
+      courseDir = event.payload.courseDir;
+      if (!event.payload.hasConfig) {
+        showSetup();
+      }
     });
 
-    log("Launching mograder student dashboard...");
-    log("Installing mograder + dependencies (first launch may take a few minutes).");
+    function showSetup() {
+      badge.textContent = "setup";
+      setupEl.style.display = "flex";
+      logEl.style.display = "none";
+      document.getElementById("course-url").focus();
+    }
 
-    let attempts = 0;
-    async function poll() {
-      attempts++;
+    function showLoading() {
+      setupEl.style.display = "none";
+      logEl.style.display = "block";
+      badge.textContent = "starting...";
+      badge.className = "";
+    }
+
+    async function submitSetup() {
+      const url = document.getElementById("course-url").value.trim();
+      const errEl = document.getElementById("setup-error");
+      errEl.textContent = "";
+      if (!url) { errEl.textContent = "Please enter a URL."; return; }
+      if (!url.startsWith("http")) { errEl.textContent = "URL must start with http:// or https://"; return; }
+
+      document.getElementById("setup-btn").disabled = true;
+      showLoading();
+      log("Setting up course from: " + url);
+      log("Installing mograder + dependencies (first launch may take a few minutes).");
+
       try {
-        await fetch(MARIMO_URL, { mode: "no-cors" });
-        if (!ready) {
-          ready = true;
-          badge.textContent = "ready";
-          badge.className = "ready";
-          log("Dashboard is ready, loading...", "log-ready");
-          window.location.href = MARIMO_URL;
-        }
-      } catch {
-        if (attempts % 5 === 0) {
-          log(`Waiting for server... (attempt ${attempts})`);
-        }
-        setTimeout(poll, 1000);
+        await invoke("launch_dashboard", { courseDirOrUrl: url });
+        pollForDashboard();
+      } catch (e) {
+        log("Failed to launch: " + e, "log-error");
+        showSetup();
+        errEl.textContent = "Launch failed. Check the URL and try again.";
+        document.getElementById("setup-btn").disabled = false;
       }
     }
 
-    poll();
+    // Called from Rust via window.eval when config already exists
+    window.__startDashboard = async function(dir) {
+      showLoading();
+      log("Launching mograder student dashboard...");
+      log("Installing mograder + dependencies (first launch may take a few minutes).");
+      try {
+        await invoke("launch_dashboard", { courseDirOrUrl: dir });
+        pollForDashboard();
+      } catch (e) {
+        log("Failed to launch: " + e, "log-error");
+      }
+    };
+
+    let attempts = 0;
+    function pollForDashboard() {
+      attempts++;
+      fetch(MARIMO_URL, { mode: "no-cors" })
+        .then(() => {
+          if (!ready) {
+            ready = true;
+            badge.textContent = "ready";
+            badge.className = "ready";
+            log("Dashboard is ready, loading...", "log-ready");
+            window.location.href = MARIMO_URL;
+          }
+        })
+        .catch(() => {
+          if (attempts % 5 === 0) {
+            log(`Waiting for server... (attempt ${attempts})`);
+          }
+          setTimeout(pollForDashboard, 1000);
+        });
+    }
+
+    // Allow Enter key in URL input
+    document.getElementById("course-url").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitSetup();
+    });
   </script>
 </body>
 </html>

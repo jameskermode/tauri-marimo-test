@@ -2080,6 +2080,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "mograder-tauri"
+version = "0.1.0"
+dependencies = [
+ "open",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-plugin-shell",
+]
+
+[[package]]
 name = "muda"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3751,19 +3764,6 @@ dependencies = [
  "syn 2.0.117",
  "tauri-codegen",
  "tauri-utils",
-]
-
-[[package]]
-name = "tauri-marimo-test"
-version = "0.1.0"
-dependencies = [
- "open",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tauri-plugin-shell",
 ]
 
 [[package]]

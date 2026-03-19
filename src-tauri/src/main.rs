@@ -31,7 +31,8 @@ fn launch_dashboard(
     let cmd = app.shell().sidecar("uv").map_err(|e| e.to_string())?;
     let cmd = cmd.env("TAURI", "1").args([
         "run",
-        "--with", "mograder",
+        "--refresh",
+        "--with", "mograder>=0.1.6",
         "mograder", "student",
         &course_dir_or_url,
         "--headless",

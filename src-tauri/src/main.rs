@@ -106,10 +106,12 @@ fn main() {
                 while let Some(event) = rx.recv().await {
                     match event {
                         CommandEvent::Stdout(line) => {
-                            let _ = app_handle.emit("sidecar-output", &line);
+                            let text = String::from_utf8_lossy(&line);
+                            let _ = app_handle.emit("sidecar-output", text.as_ref());
                         }
                         CommandEvent::Stderr(line) => {
-                            let _ = app_handle.emit("sidecar-output", &line);
+                            let text = String::from_utf8_lossy(&line);
+                            let _ = app_handle.emit("sidecar-output", text.as_ref());
                         }
                         CommandEvent::Error(err) => {
                             let _ = app_handle.emit("sidecar-error", &err);

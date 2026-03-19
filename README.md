@@ -2,32 +2,64 @@
   <img src="src-tauri/icons/icon.png" alt="mograder" width="128" />
 </p>
 
-<h1 align="center">mograder-tauri</h1>
+<h1 align="center">mograder</h1>
 
 <p align="center">
-  <a href="https://tauri.app/">Tauri v2</a> desktop app that wraps the <a href="https://github.com/jameskermode/mograder">mograder</a> student dashboard for distribution to students on managed university machines — no admin rights required on Windows.
+  Desktop app for browsing, editing, and submitting course assignments.<br/>
+  No admin rights required — just download, install, and go.
 </p>
 
-## How it works
+## Download
 
-1. The app ships with [uv](https://github.com/astral-sh/uv) (~30 MB) as a Tauri sidecar
-2. On first launch, a setup screen asks for a course configuration URL (provided by the instructor)
-3. uv creates a Python environment and runs `mograder student` which serves the dashboard at `http://127.0.0.1:2718`
-4. The WebView displays the dashboard; external links (Moodle login, marimo edit sessions) open in the system browser
+Go to the [latest build](../../actions/workflows/build.yml), click the most recent green run, and download the installer for your platform:
 
-Subsequent launches skip setup and go straight to the dashboard. First launch requires internet (uv downloads Python + packages).
+| Platform | Download |
+|----------|----------|
+| Windows | `windows-installer` |
+| macOS | `macos-installer` |
+| Linux | `linux-installer` |
 
-## Building
+## Install
 
-CI builds installers for all three platforms automatically on push to `main`. Download artifacts from the [latest workflow run](../../actions/workflows/build.yml):
+**Windows** — Run the `.exe` installer. If Windows Defender SmartScreen appears, click **More info** then **Run anyway**. No admin rights needed.
 
-| Platform | Artifact | Format |
-|----------|----------|--------|
-| Windows | `windows-installer` | NSIS `.exe` |
-| macOS | `macos-installer` | `.dmg` |
-| Linux | `linux-installer` | `.AppImage` |
+**macOS** — Open the `.dmg`, drag the app to Applications. On first launch, right-click the app and choose **Open** (needed once because the app is unsigned).
 
-To build manually:
+**Linux** — Download the `.AppImage`, make it executable (`chmod +x mograder-tauri_*.AppImage`), and run it.
+
+## Getting started
+
+1. **Launch the app.** On first launch, you'll see a setup screen.
+2. **Paste the course URL** your instructor gave you, then click **Connect**.
+3. **Wait for setup** — the app downloads everything it needs automatically. This takes a minute or two the first time; subsequent launches are fast.
+4. **Log in** when the dashboard appears (e.g. with your Moodle token if your course uses Moodle).
+
+Once set up, you can browse assignments, download notebooks, edit them in [marimo](https://marimo.io/), validate your work, and submit — all from the dashboard.
+
+To switch to a different course, click **Change course** in the toolbar.
+
+## Troubleshooting
+
+- **"Waiting for server..." doesn't stop** — Check your internet connection. The first launch needs to download Python and course packages.
+- **Moodle login link doesn't work** — Copy the token URL shown in the dashboard and paste it into your browser manually.
+- **App won't open on macOS** — Right-click the app and choose Open. You only need to do this once.
+
+## For instructors
+
+See the [mograder documentation](https://github.com/jameskermode/mograder) for how to set up a course and generate the configuration URL to share with students.
+
+---
+
+<details>
+<summary>Developer notes</summary>
+
+### Architecture
+
+The app is built with [Tauri v2](https://tauri.app/) and bundles [uv](https://github.com/astral-sh/uv) as a sidecar. On launch, uv creates a Python environment and runs `mograder student` which serves a [marimo](https://marimo.io/)-based dashboard at `http://127.0.0.1:2718`. The dashboard is displayed in an iframe within the app's WebView.
+
+### Building from source
+
+Requires: Rust toolchain, Node.js 20+
 
 ```bash
 npm install
@@ -36,26 +68,14 @@ npm install
 npx tauri build
 ```
 
-On Linux, you also need system libraries at build time:
+On Linux, install system dependencies first:
 
 ```bash
 sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-## Requirements
+### CI
 
-- **End users:** Internet on first launch (uv downloads Python + packages)
-  - **Windows:** Windows 10/11 with WebView2 (pre-installed). Unsigned — click "Run Anyway" on SmartScreen prompt.
-  - **macOS:** macOS 12+ (Apple Silicon). Unsigned — right-click → Open on first launch to bypass Gatekeeper.
-  - **Linux:** `chmod +x` the AppImage and run it
-- **Building:** Rust toolchain, Node.js 20+
+Installers for Windows, macOS, and Linux are built automatically on push to `main` via GitHub Actions.
 
-## Testing
-
-On first launch, the app shows a setup screen asking for a course configuration URL. For testing, use the mograder demo course (HTTPS transport, no authentication required):
-
-```
-https://raw.githubusercontent.com/jameskermode/mograder/main/demo/codespaces/mograder.toml
-```
-
-Paste this URL into the setup screen and click "Connect".
+</details>

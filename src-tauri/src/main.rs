@@ -13,10 +13,29 @@ fn get_app_state(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let course_dir = app_data_dir.join("course");
     std::fs::create_dir_all(&course_dir).map_err(|e| e.to_string())?;
-    let has_config = course_dir.join("mograder.toml").exists();
+    let config_path = course_dir.join("mograder.toml");
+    let has_config = config_path.exists();
+    let title = if has_config {
+        std::fs::read_to_string(&config_path)
+            .ok()
+            .and_then(|s| {
+                s.lines().find_map(|line| {
+                    let line = line.trim();
+                    if line.starts_with("title") {
+                        line.split_once('=')
+                            .map(|(_, v)| v.trim().trim_matches('"').trim_matches('\'').to_string())
+                    } else {
+                        None
+                    }
+                })
+            })
+    } else {
+        None
+    };
     Ok(serde_json::json!({
         "courseDir": course_dir.to_string_lossy(),
         "hasConfig": has_config,
+        "title": title,
     }))
 }
 

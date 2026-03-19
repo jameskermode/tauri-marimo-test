@@ -14,22 +14,32 @@
       display: flex;
       flex-direction: column;
     }
-    header {
-      padding: 16px 24px;
+    #toolbar {
+      padding: 4px 12px;
+      background: #12121e;
       border-bottom: 1px solid #2a2a4a;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
+      font-size: 0.75rem;
+      flex-shrink: 0;
     }
-    header h1 { font-size: 1.1rem; flex: 1; }
+    #toolbar .title { font-weight: 600; color: #aaa; }
+    #toolbar .spacer { flex: 1; }
     #status-badge {
-      font-size: 0.8rem;
-      padding: 4px 10px;
-      border-radius: 12px;
+      padding: 2px 8px;
+      border-radius: 8px;
       background: #333;
       color: #999;
     }
     #status-badge.ready { background: #1b3a2a; color: #4ade80; }
+    #reset-link {
+      color: #666;
+      cursor: pointer;
+      text-decoration: underline;
+      display: none;
+    }
+    #reset-link:hover { color: #999; }
 
     /* Setup screen */
     #setup {
@@ -92,21 +102,23 @@
     .log-info { color: #999; }
     .log-ready { color: #4ade80; }
     .log-error { color: #f87171; }
-    #reset-link {
-      color: #666;
-      font-size: 0.8rem;
-      cursor: pointer;
-      text-decoration: underline;
+
+    /* Dashboard iframe */
+    #dashboard {
+      display: none;
+      flex: 1;
+      border: none;
     }
-    #reset-link:hover { color: #999; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>mograder</h1>
-    <span id="reset-link" style="display:none" onclick="resetCourse()">Change course</span>
+  <div id="toolbar">
+    <img src="mograder.svg" alt="" style="height: 16px; width: 16px;" />
+    <span class="title">mograder</span>
+    <span class="spacer"></span>
+    <span id="reset-link" onclick="resetCourse()">Change course</span>
     <span id="status-badge">initializing...</span>
-  </header>
+  </div>
 
   <!-- First-launch setup screen -->
   <div id="setup">
@@ -122,6 +134,9 @@
   <!-- Loading / log panel -->
   <div id="log"></div>
 
+  <!-- Dashboard shown in iframe so toolbar persists -->
+  <iframe id="dashboard"></iframe>
+
   <script>
     const MARIMO_URL = "http://127.0.0.1:2718";
     const { invoke } = window.__TAURI__.core;
@@ -129,6 +144,7 @@
     const logEl = document.getElementById("log");
     const badge = document.getElementById("status-badge");
     const setupEl = document.getElementById("setup");
+    const dashboardEl = document.getElementById("dashboard");
     let ready = false;
     let courseDir = null;
 
@@ -148,6 +164,9 @@
     invoke("get_app_state").then((state) => {
       courseDir = state.courseDir;
       if (state.hasConfig) {
+        if (state.title) {
+          document.querySelector("#toolbar .title").textContent = state.title;
+        }
         document.getElementById("reset-link").style.display = "inline";
         startDashboard(courseDir);
       } else {
@@ -157,11 +176,32 @@
       log("Failed to initialize: " + e, "log-error");
     });
 
+    let resetPending = false;
     async function resetCourse() {
-      if (!confirm("Remove current course configuration and return to setup?")) return;
+      if (!resetPending) {
+        // First click: change text to confirm
+        resetPending = true;
+        document.getElementById("reset-link").textContent = "Confirm reset?";
+        document.getElementById("reset-link").style.color = "#f87171";
+        setTimeout(() => {
+          // Revert after 3 seconds if not confirmed
+          if (resetPending) {
+            resetPending = false;
+            document.getElementById("reset-link").textContent = "Change course";
+            document.getElementById("reset-link").style.color = "";
+          }
+        }, 3000);
+        return;
+      }
+      // Second click: actually reset
+      resetPending = false;
       try {
         await invoke("reset_course");
         document.getElementById("reset-link").style.display = "none";
+        dashboardEl.style.display = "none";
+        dashboardEl.src = "about:blank";
+        ready = false;
+        attempts = 0;
         showSetup();
       } catch (e) {
         log("Reset failed: " + e, "log-error");
@@ -172,14 +212,27 @@
       badge.textContent = "setup";
       setupEl.style.display = "flex";
       logEl.style.display = "none";
+      dashboardEl.style.display = "none";
+      document.getElementById("setup-btn").disabled = false;
+      document.getElementById("setup-error").textContent = "";
+      document.getElementById("course-url").value = "";
       document.getElementById("course-url").focus();
     }
 
     function showLoading() {
       setupEl.style.display = "none";
       logEl.style.display = "block";
+      dashboardEl.style.display = "none";
       badge.textContent = "starting...";
       badge.className = "";
+    }
+
+    function showDashboard() {
+      setupEl.style.display = "none";
+      logEl.style.display = "none";
+      dashboardEl.src = MARIMO_URL;
+      dashboardEl.style.display = "block";
+      document.getElementById("reset-link").style.display = "inline";
     }
 
     async function submitSetup() {
@@ -227,7 +280,7 @@
             badge.textContent = "ready";
             badge.className = "ready";
             log("Dashboard is ready, loading...", "log-ready");
-            window.location.href = MARIMO_URL;
+            showDashboard();
           }
         })
         .catch(() => {

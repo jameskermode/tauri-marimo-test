@@ -1,6 +1,12 @@
-# mograder-tauri
+<p align="center">
+  <img src="src-tauri/icons/icon.png" alt="mograder" width="128" />
+</p>
 
-[Tauri v2](https://tauri.app/) desktop app that wraps the [mograder](https://github.com/jameskermode/mograder) student dashboard for distribution to students on managed university machines — no admin rights required on Windows.
+<h1 align="center">mograder-tauri</h1>
+
+<p align="center">
+  <a href="https://tauri.app/">Tauri v2</a> desktop app that wraps the <a href="https://github.com/jameskermode/mograder">mograder</a> student dashboard for distribution to students on managed university machines — no admin rights required on Windows.
+</p>
 
 ## How it works
 

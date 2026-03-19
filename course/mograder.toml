@@ -1,0 +1,80 @@
+jobs = 16
+transport = "moodle"
+
+[[assignments]]
+name = "A0. Probability Theory"
+dir = "A0-Probability"
+id = 0
+cmid = 0
+duedate = 0
+files = []
+
+[[assignments]]
+name = "A1. Introduction to Scientific Machine Learning (Not Assessed)"
+dir = "A1-Intro-to-SciML"
+id = 45061
+cmid = 2452685
+duedate = 1737633600
+  [[assignments.files]]
+  name = "demo-assignment.py"
+  url = "https://moodle-staging.warwick.ac.uk/pluginfile.php/3814762/mod_assign/introattachment/0/demo-assignment.py"
+
+[[assignments]]
+name = "A2. Sensitivity Analysis"
+dir = "A2-SensitivityAnalysis"
+id = 45062
+cmid = 2452686
+duedate = 1738238400
+files = []
+
+[[assignments]]
+name = "A3. Linear Regression"
+dir = "A3-BayesianLinearRegression"
+id = 45063
+cmid = 2452687
+duedate = 1738843200
+files = []
+
+[[assignments]]
+name = "A4. Gaussian Process Regression"
+dir = "A4"
+id = 45064
+cmid = 2452688
+duedate = 1739448000
+files = []
+
+[[assignments]]
+name = "A5. Neural Networks"
+dir = "A5"
+id = 45065
+cmid = 2452689
+duedate = 1740052800
+files = []
+
+[[assignments]]
+name = "A6. Physics-Informed Neural Networks"
+dir = "A6"
+id = 45066
+cmid = 2452690
+duedate = 1740657600
+files = []
+
+[[assignments]]
+name = "A7.  Unsupervised Learning"
+dir = "A7"
+id = 45067
+cmid = 2452691
+duedate = 1741262400
+files = []
+
+[defaults]
+headless_edit = true
+
+[edit_links]
+molab = "https://molab.marimo.io/new/#code/{content_lz}"
+codespaces = "https://github.com/HetSys/es98e-2025-26-es98e-assignments-ES98E-Codespaces/codespaces"
+
+[moodle]
+url = "https://moodle-staging.warwick.ac.uk"
+course_id = 65017
+csv = "moodle_worksheet.csv"

@@ -9,7 +9,7 @@
   "app": {
     "windows": [
       {
-        "title": "marimo",
+        "title": "mograder",
         "width": 1200,
         "height": 800,
         "url": "index.html"
@@ -31,7 +31,7 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../notebooks/*": "notebooks/"
+      "../course/*": "course/"
     },
     "externalBin": ["uv"],
     "windows": {

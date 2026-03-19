@@ -136,12 +136,16 @@
     listen("sidecar-output", (event) => { log(event.payload, "log-info"); });
     listen("sidecar-error", (event) => { log(event.payload, "log-error"); });
 
-    // Listen for init event from Rust
-    listen("app-init", (event) => {
-      courseDir = event.payload.courseDir;
-      if (!event.payload.hasConfig) {
+    // Ask Rust for app state on load
+    invoke("get_app_state").then((state) => {
+      courseDir = state.courseDir;
+      if (state.hasConfig) {
+        startDashboard(courseDir);
+      } else {
         showSetup();
       }
+    }).catch((e) => {
+      log("Failed to initialize: " + e, "log-error");
     });
 
     function showSetup() {
@@ -181,8 +185,7 @@
       }
     }
 
-    // Called from Rust via window.eval when config already exists
-    window.__startDashboard = async function(dir) {
+    async function startDashboard(dir) {
       showLoading();
       log("Launching mograder student dashboard...");
       log("Installing mograder + dependencies (first launch may take a few minutes).");
@@ -192,7 +195,7 @@
       } catch (e) {
         log("Failed to launch: " + e, "log-error");
       }
-    };
+    }
 
     let attempts = 0;
     function pollForDashboard() {

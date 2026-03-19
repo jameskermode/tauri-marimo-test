@@ -11,13 +11,13 @@
 
 ## Download
 
-Go to the [latest build](../../actions/workflows/build.yml), click the most recent green run, and download the installer for your platform:
+Download the latest installer for your platform from the [Releases page](../../releases/latest):
 
-| Platform | Download |
-|----------|----------|
-| Windows | `windows-installer` |
-| macOS | `macos-installer` |
-| Linux | `linux-installer` |
+| Platform | File |
+|----------|------|
+| Windows | `mograder-tauri_*_x64-setup.exe` |
+| macOS | `mograder-tauri_*_aarch64.dmg` |
+| Linux | `mograder-tauri_*_amd64.AppImage` |
 
 ## Install
 

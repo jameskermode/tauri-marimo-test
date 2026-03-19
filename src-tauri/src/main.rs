@@ -29,7 +29,7 @@ fn launch_dashboard(
     course_dir_or_url: String,
 ) -> Result<(), String> {
     let cmd = app.shell().sidecar("uv").map_err(|e| e.to_string())?;
-    let cmd = cmd.args([
+    let cmd = cmd.env("TAURI", "1").args([
         "run",
         "--with", "mograder",
         "mograder", "student",

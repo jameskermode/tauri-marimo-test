@@ -20,6 +20,17 @@ fn get_app_state(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     }))
 }
 
+/// Remove course config so the setup screen is shown on next launch.
+#[tauri::command]
+fn reset_course(app: tauri::AppHandle) -> Result<(), String> {
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let course_dir = app_data_dir.join("course");
+    if course_dir.exists() {
+        std::fs::remove_dir_all(&course_dir).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Launch the mograder student dashboard.
 /// `course_dir_or_url` is either a local directory path (returning user)
 /// or a URL to a mograder.toml (first-time setup).
@@ -135,7 +146,7 @@ fn main() {
                 .build(),
         )
         .manage(SidecarChild(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![get_app_state, launch_dashboard])
+        .invoke_handler(tauri::generate_handler![get_app_state, reset_course, launch_dashboard])
         .setup(|_app| Ok(()))
         .build(tauri::generate_context!())
         .expect("error building tauri app");

@@ -92,11 +92,19 @@
     .log-info { color: #999; }
     .log-ready { color: #4ade80; }
     .log-error { color: #f87171; }
+    #reset-link {
+      color: #666;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    #reset-link:hover { color: #999; }
   </style>
 </head>
 <body>
   <header>
     <h1>mograder</h1>
+    <span id="reset-link" style="display:none" onclick="resetCourse()">Change course</span>
     <span id="status-badge">initializing...</span>
   </header>
 
@@ -140,6 +148,7 @@
     invoke("get_app_state").then((state) => {
       courseDir = state.courseDir;
       if (state.hasConfig) {
+        document.getElementById("reset-link").style.display = "inline";
         startDashboard(courseDir);
       } else {
         showSetup();
@@ -147,6 +156,17 @@
     }).catch((e) => {
       log("Failed to initialize: " + e, "log-error");
     });
+
+    async function resetCourse() {
+      if (!confirm("Remove current course configuration and return to setup?")) return;
+      try {
+        await invoke("reset_course");
+        document.getElementById("reset-link").style.display = "none";
+        showSetup();
+      } catch (e) {
+        log("Reset failed: " + e, "log-error");
+      }
+    }
 
     function showSetup() {
       badge.textContent = "setup";

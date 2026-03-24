@@ -126,7 +126,7 @@
     <div class="card">
       <h2>Course Setup</h2>
       <p>Paste the course configuration URL provided by your instructor.</p>
-      <input id="course-url" type="url" placeholder="https://example.com/path/to/mograder.toml" />
+      <input id="course-url" type="url" placeholder="https://example.com/path/to/mograder.toml" value="https://mograder-demo.jrkermode.uk/mograder.toml" />
       <button id="setup-btn" onclick="submitSetup()">Connect</button>
       <div id="setup-error" class="error"></div>
     </div>
@@ -216,7 +216,6 @@
       dashboardEl.style.display = "none";
       document.getElementById("setup-btn").disabled = false;
       document.getElementById("setup-error").textContent = "";
-      document.getElementById("course-url").value = "";
       document.getElementById("course-url").focus();
     }
 

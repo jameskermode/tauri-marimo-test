@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegui/tauri/refs/heads/main/crates/tauri-cli/schema.json",
   "productName": "mograder-tauri",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.mograder-tauri.app",
   "build": {
     "frontendDist": "../src"

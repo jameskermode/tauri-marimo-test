@@ -68,7 +68,8 @@ fn launch_dashboard(
         .args([
         "run",
         "--refresh",
-        "--with", "mograder>=0.1.6",
+        "--upgrade-package", "mograder",
+        "--with", "mograder",
         "mograder", "student",
         &course_dir_or_url,
         "--headless",

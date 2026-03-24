@@ -58,8 +58,14 @@ fn launch_dashboard(
     app: tauri::AppHandle,
     course_dir_or_url: String,
 ) -> Result<(), String> {
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let uv_cache = app_data_dir.join("uv-cache");
+
     let cmd = app.shell().sidecar("uv").map_err(|e| e.to_string())?;
-    let cmd = cmd.env("TAURI", "1").args([
+    let cmd = cmd
+        .env("TAURI", "1")
+        .env("UV_CACHE_DIR", uv_cache.to_string_lossy().to_string())
+        .args([
         "run",
         "--refresh",
         "--with", "mograder>=0.1.6",

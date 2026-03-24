@@ -61,10 +61,22 @@ fn launch_dashboard(
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let uv_cache = app_data_dir.join("uv-cache");
 
-    // Check if we should refresh packages (at most once per 24h)
+    // Check if we should refresh packages (at most once per 24h, or on app update)
     let refresh_marker = app_data_dir.join("last_refresh");
-    let needs_refresh = match refresh_marker.metadata().and_then(|m| m.modified()) {
-        Ok(modified) => modified.elapsed().unwrap_or_default().as_secs() > 24 * 3600,
+    let app_version = env!("CARGO_PKG_VERSION");
+    let needs_refresh = match std::fs::read_to_string(&refresh_marker) {
+        Ok(contents) => {
+            // Refresh if app version changed (new install) or >24h since last check
+            let stored_version = contents.lines().next().unwrap_or("");
+            if stored_version != app_version {
+                true
+            } else {
+                refresh_marker.metadata()
+                    .and_then(|m| m.modified())
+                    .map(|t| t.elapsed().unwrap_or_default().as_secs() > 24 * 3600)
+                    .unwrap_or(true)
+            }
+        }
         Err(_) => true, // no marker = first launch
     };
 
@@ -77,9 +89,9 @@ fn launch_dashboard(
     args.push("run");
     if needs_refresh {
         args.extend_from_slice(&["--refresh", "--upgrade-package", "mograder"]);
-        // Touch the marker file
+        // Write marker with app version
         let _ = std::fs::create_dir_all(&app_data_dir);
-        let _ = std::fs::write(&refresh_marker, "");
+        let _ = std::fs::write(&refresh_marker, app_version);
     }
     args.extend_from_slice(&[
         "--with", "mograder",

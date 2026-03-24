@@ -61,14 +61,27 @@ fn launch_dashboard(
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let uv_cache = app_data_dir.join("uv-cache");
 
+    // Check if we should refresh packages (at most once per 24h)
+    let refresh_marker = app_data_dir.join("last_refresh");
+    let needs_refresh = match refresh_marker.metadata().and_then(|m| m.modified()) {
+        Ok(modified) => modified.elapsed().unwrap_or_default().as_secs() > 24 * 3600,
+        Err(_) => true, // no marker = first launch
+    };
+
     let cmd = app.shell().sidecar("uv").map_err(|e| e.to_string())?;
     let cmd = cmd
         .env("TAURI", "1")
-        .env("UV_CACHE_DIR", uv_cache.to_string_lossy().to_string())
-        .args([
-        "run",
-        "--refresh",
-        "--upgrade-package", "mograder",
+        .env("UV_CACHE_DIR", uv_cache.to_string_lossy().to_string());
+
+    let mut args = Vec::new();
+    args.push("run");
+    if needs_refresh {
+        args.extend_from_slice(&["--refresh", "--upgrade-package", "mograder"]);
+        // Touch the marker file
+        let _ = std::fs::create_dir_all(&app_data_dir);
+        let _ = std::fs::write(&refresh_marker, "");
+    }
+    args.extend_from_slice(&[
         "--with", "mograder",
         "mograder", "student",
         &course_dir_or_url,
@@ -76,6 +89,7 @@ fn launch_dashboard(
         "--no-token",
         "--port", "2718",
     ]);
+    let cmd = cmd.args(args);
 
     let (mut rx, child) = cmd.spawn().map_err(|e| e.to_string())?;
 

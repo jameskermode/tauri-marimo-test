@@ -23,7 +23,11 @@ Download the latest installer for your platform from the [Releases page](../../r
 
 **Windows** — Run the `.exe` installer. If Windows Defender SmartScreen appears, click **More info** then **Run anyway**. No admin rights needed.
 
-**macOS** — Open the `.dmg`, drag the app to Applications. On first launch, right-click the app and choose **Open** (needed once because the app is unsigned).
+**macOS** — Open the `.dmg`, drag the app to Applications. The app is unsigned, so you need to remove the quarantine attribute before first launch:
+```bash
+xattr -cr /Applications/mograder-tauri.app
+```
+Then open the app normally. You only need to do this once.
 
 **Linux** — Download the `.AppImage`, make it executable (`chmod +x mograder-tauri_*.AppImage`), and run it.
 
@@ -42,7 +46,7 @@ To switch to a different course, click **Change course** in the toolbar.
 
 - **"Waiting for server..." doesn't stop** — Check your internet connection. The first launch needs to download Python and course packages.
 - **Moodle login link doesn't work** — Copy the token URL shown in the dashboard and paste it into your browser manually.
-- **App won't open on macOS** — Right-click the app and choose Open. You only need to do this once.
+- **"App is damaged" on macOS** — Run `xattr -cr /Applications/mograder-tauri.app` in Terminal, then open the app again. This removes the quarantine flag added by your browser.
 
 ## For instructors
 

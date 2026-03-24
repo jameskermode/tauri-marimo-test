@@ -40,7 +40,9 @@ Then open the app normally. You only need to do this once.
 
 Once set up, you can browse assignments, download notebooks, edit them in [marimo](https://marimo.io/), validate your work, and submit — all from the dashboard.
 
-To switch to a different course, click **Change course** in the toolbar.
+The toolbar has two options:
+- **Refresh** — checks for updates to mograder and course packages, then restarts the dashboard. Use this if your instructor asks you to update.
+- **Change course** — removes the current course configuration and returns to the setup screen.
 
 ## Troubleshooting
 

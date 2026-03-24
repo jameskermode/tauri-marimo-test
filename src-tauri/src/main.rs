@@ -57,16 +57,21 @@ fn reset_course(app: tauri::AppHandle) -> Result<(), String> {
 fn launch_dashboard(
     app: tauri::AppHandle,
     course_dir_or_url: String,
+    force_refresh: Option<bool>,
 ) -> Result<(), String> {
+    // Kill any existing sidecar
+    if let Some(child) = app.state::<SidecarChild>().0.lock().unwrap().take() {
+        let _ = child.kill();
+    }
+
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let uv_cache = app_data_dir.join("uv-cache");
 
-    // Check if we should refresh packages (at most once per 24h, or on app update)
+    // Check if we should refresh packages (at most once per 24h, on app update, or forced)
     let refresh_marker = app_data_dir.join("last_refresh");
     let app_version = env!("CARGO_PKG_VERSION");
-    let needs_refresh = match std::fs::read_to_string(&refresh_marker) {
+    let needs_refresh = force_refresh.unwrap_or(false) || match std::fs::read_to_string(&refresh_marker) {
         Ok(contents) => {
-            // Refresh if app version changed (new install) or >24h since last check
             let stored_version = contents.lines().next().unwrap_or("");
             if stored_version != app_version {
                 true
@@ -77,7 +82,7 @@ fn launch_dashboard(
                     .unwrap_or(true)
             }
         }
-        Err(_) => true, // no marker = first launch
+        Err(_) => true,
     };
 
     let cmd = app.shell().sidecar("uv").map_err(|e| e.to_string())?;
@@ -89,7 +94,6 @@ fn launch_dashboard(
     args.push("run");
     if needs_refresh {
         args.extend_from_slice(&["--refresh", "--upgrade-package", "mograder"]);
-        // Write marker with app version
         let _ = std::fs::create_dir_all(&app_data_dir);
         let _ = std::fs::write(&refresh_marker, app_version);
     }

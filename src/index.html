@@ -33,13 +33,13 @@
       color: #999;
     }
     #status-badge.ready { background: #1b3a2a; color: #4ade80; }
-    #reset-link {
+    #reset-link, #refresh-link {
       color: #666;
       cursor: pointer;
       text-decoration: underline;
       display: none;
     }
-    #reset-link:hover { color: #999; }
+    #reset-link:hover, #refresh-link:hover { color: #999; }
 
     /* Setup screen */
     #setup {
@@ -116,6 +116,7 @@
     <img src="mograder.svg" alt="" style="height: 16px; width: 16px;" />
     <span class="title">mograder</span>
     <span class="spacer"></span>
+    <span id="refresh-link" style="display:none" onclick="refreshDashboard()">Refresh</span>
     <span id="reset-link" onclick="resetCourse()">Change course</span>
     <span id="status-badge">initializing...</span>
   </div>
@@ -233,6 +234,22 @@
       dashboardEl.src = MARIMO_URL;
       dashboardEl.style.display = "block";
       document.getElementById("reset-link").style.display = "inline";
+      document.getElementById("refresh-link").style.display = "inline";
+    }
+
+    async function refreshDashboard() {
+      if (!courseDir) return;
+      ready = false;
+      attempts = 0;
+      dashboardEl.src = "about:blank";
+      showLoading();
+      log("Refreshing packages...");
+      try {
+        await invoke("launch_dashboard", { courseDirOrUrl: courseDir, forceRefresh: true });
+        pollForDashboard();
+      } catch (e) {
+        log("Refresh failed: " + e, "log-error");
+      }
     }
 
     async function submitSetup() {
